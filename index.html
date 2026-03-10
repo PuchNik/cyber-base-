@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Справочник команд Cisco и MikroTik</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-title">
+      <h1>Справочник команд Cisco и MikroTik</h1>
+      <p>Cheat‑sheet для быстрого поиска сетевых команд</p>
+    </div>
+    <div class="header-controls">
+      <div class="section-toggle" aria-label="Глобальные разделы">
+        <button
+          type="button"
+          class="section-toggle-btn active"
+          data-section="network"
+          id="sectionNetworkBtn"
+        >
+          Сетевые технологии
+        </button>
+        <button
+          type="button"
+          class="section-toggle-btn"
+          data-section="laws"
+          id="sectionLawsBtn"
+        >
+          Нормативно‑правовые акты
+        </button>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Скрыть или показать панель поиска">
+        🔍
+      </button>
+      <div class="vendor-toggle" role="tablist" aria-label="Выбор вендора">
+        <button class="vendor-btn active" data-vendor="cisco" role="tab" aria-selected="true">
+          Cisco
+        </button>
+        <button class="vendor-btn" data-vendor="mikrotik" role="tab" aria-selected="false">
+          MikroTik
+        </button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+        🌙
+      </button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <aside class="sidebar" id="sidebar">
+      <section class="search-section" id="searchSection">
+        <label for="searchInput" class="sidebar-label">Поиск по командам</label>
+        <input
+          type="search"
+          id="searchInput"
+          class="search-input"
+          placeholder="Команда, описание, протокол..."
+          autocomplete="off"
+        />
+      </section>
+
+      <section class="filters-section">
+        <div class="filters-header">
+          <span class="sidebar-label" id="filtersLabel">Разделы</span>
+          <button id="resetFilters" class="link-button" type="button">
+            Сбросить
+          </button>
+        </div>
+        <div id="categoryFilters" class="filters-list">
+          <!-- Фильтры категорий будут сгенерированы JS -->
+        </div>
+      </section>
+
+      <section class="legend-section">
+        <span class="sidebar-label">Обозначения</span>
+        <ul class="legend-list">
+          <li><span class="badge badge-mode">mode</span> режим конфигурации</li>
+          <li><span class="badge badge-danger">!</span> осторожно / изменяет трафик</li>
+          <li><span class="badge badge-info">diag</span> диагностика</li>
+        </ul>
+      </section>
+    </aside>
+
+    <section class="content">
+      <div class="content-header">
+        <h2 id="currentVendorTitle">Cisco — команды</h2>
+        <div class="content-header-right">
+          <div class="view-toggle" aria-label="Режим отображения">
+            <button
+              type="button"
+              class="view-toggle-btn active"
+              data-view="commands"
+              id="viewCommandsBtn"
+            >
+              Команды
+            </button>
+            <button
+              type="button"
+              class="view-toggle-btn"
+              data-view="scenarios"
+              id="viewScenariosBtn"
+            >
+              Сценарии
+            </button>
+          </div>
+          <span id="resultsCount" class="results-count"></span>
+        </div>
+      </div>
+
+      <div id="commandsContainer" class="commands-grid">
+        <!-- Карточки команд будут сгенерированы JS -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Локальный оффлайн‑справочник. Можно использовать на лабах и экзаменах.</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
