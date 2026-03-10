@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate, Navigate, useParams } from "react-router-dom";
 import styled, { createGlobalStyle } from "styled-components";
 import { commands, scenarios, laws } from "./data.js";
+import heroImage from "../save.jpg";
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -45,6 +46,8 @@ const GlobalStyle = createGlobalStyle`
     margin: 0;
     min-height: 100vh;
     font-family: var(--font-ui);
+    font-size: 18px;
+    line-height: 1.6;
     background: var(--bg);
     color: var(--text);
     display: flex;
@@ -62,12 +65,14 @@ const Header = styled.header`
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 32px;
-  background: var(--bg);
+  background: #0d2447;
   border-bottom: 1px solid var(--border-subtle);
+  color: #e5e7eb;
 
   @media (max-width: 640px) {
     flex-direction: column;
@@ -82,11 +87,12 @@ const AppTitle = styled.div`
     margin: 0;
     font-size: 1.5rem;
     letter-spacing: -0.03em;
+    color: #e5e7eb;
   }
   p {
     margin: 4px 0 0;
     font-size: 0.9rem;
-    color: var(--text-soft);
+    color: #cbd5f5;
   }
 `;
 
@@ -104,8 +110,8 @@ const SectionToggle = styled.div`
   display: inline-flex;
   padding: 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--bg-elevated-soft) 82%, rgba(148, 163, 184, 0.35));
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.4);
 `;
 
 const SectionToggleBtn = styled.button`
@@ -121,8 +127,8 @@ const SectionToggleBtn = styled.button`
     box-shadow var(--transition-fast), transform 80ms ease-out;
 
   &.active {
-    background: color-mix(in srgb, var(--bg-elevated) 96%, rgba(37, 99, 235, 0.2));
-    color: var(--accent);
+    background: linear-gradient(135deg, #38bdf8, #22c55e);
+    color: #0b1120;
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.32);
     transform: translateY(-1px);
   }
@@ -155,46 +161,17 @@ const IconButton = styled.button`
   }
 `;
 
-const VendorToggle = styled.div`
-  display: inline-flex;
-  padding: 3px;
-  background: color-mix(in srgb, var(--bg-elevated) 70%, rgba(148, 163, 184, 0.2));
-  border-radius: var(--radius-pill);
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
-`;
-
-const VendorBtn = styled.button`
-  border: none;
-  background: transparent;
-  color: var(--text-soft);
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast),
-    box-shadow var(--transition-fast), transform 80ms ease-out;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  &.active {
-    background: linear-gradient(135deg, var(--accent), #22c55e);
-    color: #f9fafb;
-    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.45);
-    transform: translateY(-1px);
-  }
-`;
-
 const ThemeToggle = styled(IconButton)`
   width: 36px;
   height: 36px;
-  background: color-mix(in srgb, var(--bg-elevated) 80%, rgba(15, 23, 42, 0.05));
+  background: rgba(15, 23, 42, 0.9);
 `;
 
 const Main = styled.main`
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  grid-template-columns: ${(props) =>
+    props.hasSidebar ? "minmax(260px, 300px) minmax(0, 1fr)" : "minmax(0, 1fr)"};
   gap: 16px;
   padding: 16px 16px 20px;
   max-width: 1240px;
@@ -219,10 +196,6 @@ const Sidebar = styled.aside`
 
   @media (max-width: 900px) {
     order: -1;
-  }
-
-  &.hidden {
-    display: none;
   }
 `;
 
@@ -478,12 +451,12 @@ const CommandDescription = styled.div`
 `;
 
 const ScenarioTitle = styled.div`
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
 `;
 
 const ScenarioDescription = styled.div`
-  font-size: 0.83rem;
+  font-size: 0.95rem;
   color: var(--text-soft);
 `;
 
@@ -493,17 +466,17 @@ const ScenarioSteps = styled.ol`
 `;
 
 const ScenarioStep = styled.li`
-  margin-bottom: 4px;
-  font-size: 0.83rem;
+  margin-bottom: 10px;
+  font-size: 0.98rem;
 `;
 
 const ScenarioStepCode = styled.span`
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   background: color-mix(in srgb, var(--bg-elevated-soft) 94%, rgba(15, 23, 42, 0.08));
   border-radius: 6px;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border: 1px solid rgba(148, 163, 184, 0.6);
 `;
 
@@ -550,14 +523,140 @@ const Footer = styled.footer`
   text-align: center;
 `;
 
+const LandingRoot = styled.div`
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f9fafb;
+  overflow: hidden;
+`;
+
+const LandingBackground = styled.div`
+  position: absolute;
+  inset: 0;
+  background-image: url(${heroImage});
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.6);
+  transform: scale(1.02);
+`;
+
+const LandingOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+      circle at top,
+      rgba(37, 99, 235, 0.6),
+      transparent 55%
+    ),
+    radial-gradient(circle at bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.96));
+  mix-blend-mode: multiply;
+`;
+
+const LandingContent = styled.div`
+  position: relative;
+  max-width: 780px;
+  padding: 32px 24px;
+  text-align: center;
+`;
+
+const LandingTopBar = styled.div`
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+  background: #0d2447;
+
+  @media (max-width: 640px) {
+    padding-inline: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+`;
+
+const LandingTitle = styled.h1`
+  margin: 0 0 16px;
+  font-size: clamp(2.2rem, 3vw + 1.4rem, 3.2rem);
+  letter-spacing: -0.04em;
+`;
+
+const LandingSubtitle = styled.p`
+  margin: 0 0 24px;
+  font-size: 1.2rem;
+  line-height: 1.7;
+  color: rgba(226, 232, 240, 0.9);
+`;
+
+const LandingMeta = styled.p`
+  margin: 0 0 28px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(191, 219, 254, 0.9);
+`;
+
+const LandingButton = styled.button`
+  border: none;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #0b1120;
+  background: linear-gradient(135deg, #38bdf8, #22c55e);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.6);
+  transition: transform 80ms ease-out, box-shadow 160ms ease-out, filter 160ms ease-out;
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.03);
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.9);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.7);
+  }
+`;
+
+function LandingPage({ onEnter, onOpenLaws, isDark, onToggleTheme }) {
+  return (
+    <LandingRoot>
+      <LandingBackground />
+      <LandingOverlay />
+
+      <LandingContent>
+        <LandingMeta>· Информационная безопасность ·</LandingMeta>
+        <LandingTitle>Справочник по информационной безопасности</LandingTitle>
+        <LandingSubtitle>
+        На моем ресурсе Вы найдете все полезные материалы по теме информационной безопасности. Я собрали для вас актуальную информацию по сетевым технологиям, нормативно-правовым актам и основным аспектам информационной безопасности.<br />
+        Я стремлюсь создать удобную платформу, где Вы сможете легко находить полезные советы, руководства и аналитические материалы. Я постоянно работаю над улучшением сайта и регулярно добавляю новую информацию.<br />
+        Все это бесплатно, поэтому читайте, познавайте и помогайте другим!<br />
+        </LandingSubtitle>
+        <LandingButton type="button" onClick={onEnter}>
+          Перейти к справочнику
+        </LandingButton>
+      </LandingContent>
+    </LandingRoot>
+  );
+}
+
 function useTheme() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("cheatsheet-theme");
-    const dark = saved === "dark";
-    setIsDark(dark);
-    document.body.classList.toggle("theme-dark", dark);
+    // По умолчанию всегда светлая тема
+    setIsDark(false);
+    document.body.classList.remove("theme-dark");
   }, []);
 
   const toggle = () => {
@@ -583,6 +682,7 @@ function useCategories(vendor) {
 }
 
 function NetworkContent({ vendor, view, search, activeCategories }) {
+  const navigate = useNavigate();
   const term = search.trim().toLowerCase();
   const useCategoryFilter = activeCategories.size > 0;
 
@@ -645,17 +745,15 @@ function NetworkContent({ vendor, view, search, activeCategories }) {
       </ContentHeader>
       <CommandsGrid>
         {filteredScenarios.map((scenario) => (
-          <Card key={scenario.title}>
+          <Card
+            key={scenario.title}
+            style={{ cursor: "pointer" }}
+            onClick={() =>
+              navigate(`/app/scenarios/${encodeURIComponent(scenario.title)}`)
+            }
+          >
             <ScenarioTitle>{scenario.title}</ScenarioTitle>
             <ScenarioDescription>{scenario.description}</ScenarioDescription>
-            <ScenarioSteps>
-              {scenario.steps.map((step) => (
-                <ScenarioStep key={step.cmd + step.note}>
-                  <ScenarioStepCode>{step.cmd}</ScenarioStepCode>
-                  {step.note && <span>{` — ${step.note}`}</span>}
-                </ScenarioStep>
-              ))}
-            </ScenarioSteps>
           </Card>
         ))}
       </CommandsGrid>
@@ -758,6 +856,57 @@ function LawsContent({ lawId, pageIndex }) {
   );
 }
 
+function ScenarioDetail() {
+  const { title } = useParams();
+  const decodedTitle = title ? decodeURIComponent(title) : "";
+  const scenario =
+    scenarios.find((s) => s.title === decodedTitle) ?? null;
+
+  if (!scenario) {
+    return (
+      <>
+        <ContentHeader>
+          <h2>Сценарий не найден</h2>
+        </ContentHeader>
+        <CommandsGrid>
+          <Card>
+            <ScenarioDescription>
+              Возможно, сценарий был переименован или удалён. Вернитесь к списку сценариев.
+            </ScenarioDescription>
+          </Card>
+        </CommandsGrid>
+      </>
+    );
+  }
+
+  const labelVendor = scenario.vendor === "cisco" ? "Cisco" : "MikroTik";
+
+  return (
+    <>
+      <ContentHeader>
+        <h2>{scenario.title}</h2>
+        <ResultsCount>{labelVendor}</ResultsCount>
+      </ContentHeader>
+      <CommandsGrid>
+        <Card>
+          <ScenarioTitle>{scenario.title}</ScenarioTitle>
+          <ScenarioDescription>{scenario.description}</ScenarioDescription>
+        </Card>
+        <Card>
+          <ScenarioSteps>
+            {scenario.steps.map((step) => (
+              <ScenarioStep key={step.cmd + (step.note || "")}>
+                <ScenarioStepCode>{step.cmd}</ScenarioStepCode>
+                {step.note && <span>{` — ${step.note}`}</span>}
+              </ScenarioStep>
+            ))}
+          </ScenarioSteps>
+        </Card>
+      </CommandsGrid>
+    </>
+  );
+}
+
 function App() {
   const { isDark, toggle } = useTheme();
   const [vendor, setVendor] = useState("cisco");
@@ -766,12 +915,13 @@ function App() {
   const [activeCategories, setActiveCategories] = useState(new Set());
   const [lawId, setLawId] = useState(laws[0]?.id ?? null);
   const [lawPage, setLawPage] = useState(0);
-  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isLawsRoute = location.pathname.startsWith("/laws");
+  const isLandingRoute = location.pathname === "/";
+  const isLawsRoute = location.pathname.startsWith("/app/laws");
+  const isScenarioRoute = location.pathname.startsWith("/app/scenarios");
   const categories = useCategories(vendor);
 
   const handleToggleCategory = (cat) => {
@@ -801,6 +951,20 @@ function App() {
     setActiveCategories(new Set());
   }, [location.pathname]);
 
+  if (isLandingRoute) {
+    return (
+      <>
+        <GlobalStyle />
+        <LandingPage
+          onEnter={() => navigate("/app")}
+          onOpenLaws={() => navigate("/app/laws")}
+          isDark={isDark}
+          onToggleTheme={toggle}
+        />
+      </>
+    );
+  }
+
   return (
     <AppShell>
       <GlobalStyle />
@@ -814,47 +978,18 @@ function App() {
             <SectionToggleBtn
               type="button"
               className={!isLawsRoute ? "active" : ""}
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/app")}
             >
               Сетевые технологии
             </SectionToggleBtn>
             <SectionToggleBtn
               type="button"
               className={isLawsRoute ? "active" : ""}
-              onClick={() => navigate("/laws")}
+              onClick={() => navigate("/app/laws")}
             >
               Нормативно‑правовые акты
             </SectionToggleBtn>
           </SectionToggle>
-
-          <IconButton
-            type="button"
-            aria-label="Скрыть или показать панель поиска"
-            className={sidebarHidden ? "active" : ""}
-            onClick={() => setSidebarHidden((v) => !v)}
-          >
-            🔍
-          </IconButton>
-
-          {!isLawsRoute && (
-            <VendorToggle role="tablist" aria-label="Выбор вендора">
-              <VendorBtn
-                type="button"
-                className={vendor === "cisco" ? "active" : ""}
-                onClick={() => setVendor("cisco")}
-              >
-                Cisco
-              </VendorBtn>
-              <VendorBtn
-                type="button"
-                className={vendor === "mikrotik" ? "active" : ""}
-                onClick={() => setVendor("mikrotik")}
-              >
-                MikroTik
-              </VendorBtn>
-            </VendorToggle>
-          )}
-
           <ThemeToggle
             type="button"
             aria-label="Переключить тему"
@@ -865,68 +1000,19 @@ function App() {
         </HeaderControls>
       </Header>
 
-      <Main>
-        <Sidebar className={sidebarHidden ? "hidden" : ""}>
-          <section>
-            <SidebarLabel>Поиск по командам</SidebarLabel>
-            <SearchInput
-              type="search"
-              placeholder={
-                isLawsRoute
-                  ? "Поиск по названию и описанию закона..."
-                  : "Команда, описание, протокол..."
-              }
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </section>
+      <Main hasSidebar={isLawsRoute}>
+        {isLawsRoute && (
+          <Sidebar>
+            <section>
+              <SidebarLabel>Поиск по законам</SidebarLabel>
+              <SearchInput
+                type="search"
+                placeholder="Поиск по названию и описанию закона..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </section>
 
-          {!isLawsRoute && (
-            <>
-              <FiltersSection>
-                <FiltersHeader>
-                  <SidebarLabel>Разделы</SidebarLabel>
-                  <LinkButton type="button" onClick={resetFilters}>
-                    Сбросить
-                  </LinkButton>
-                </FiltersHeader>
-                <FiltersList>
-                  {categories.map((cat) => (
-                    <FilterChip
-                      key={cat}
-                      type="button"
-                      className={
-                        activeCategories.size === 0 || activeCategories.has(cat)
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() => handleToggleCategory(cat)}
-                    >
-                      <span>●</span>
-                      {cat}
-                    </FilterChip>
-                  ))}
-                </FiltersList>
-              </FiltersSection>
-
-              <LegendSection>
-                <SidebarLabel>Обозначения</SidebarLabel>
-                <LegendList>
-                  <li>
-                    <Badge className="badge-mode">mode</Badge> режим конфигурации
-                  </li>
-                  <li>
-                    <Badge className="badge-danger">!</Badge> осторожно / изменяет трафик
-                  </li>
-                  <li>
-                    <Badge className="badge-info">diag</Badge> диагностика
-                  </li>
-                </LegendList>
-              </LegendSection>
-            </>
-          )}
-
-          {isLawsRoute && (
             <FiltersSection>
               <FiltersHeader>
                 <SidebarLabel>Документы</SidebarLabel>
@@ -956,23 +1042,46 @@ function App() {
                 })}
               </FiltersList>
             </FiltersSection>
-          )}
-        </Sidebar>
+          </Sidebar>
+        )}
 
         <Content>
           {!isLawsRoute && (
+            <div
+              style={{
+                marginBottom: 16,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div style={{ maxWidth: 480, width: "100%" }}>
+                <SearchInput
+                  type="search"
+                  placeholder={
+                    view === "scenarios"
+                      ? "Поиск по сценариям на сайте..."
+                      : "Поиск по командам на сайте..."
+                  }
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {!isLawsRoute && !isScenarioRoute && (
             <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end" }}>
               <ViewToggle aria-label="Режим отображения">
                 <ViewToggleBtn
                   type="button"
-                  className={view === "commands" ? "active" : ""}
+                  className={view === "commands" && !isScenarioRoute ? "active" : ""}
                   onClick={() => setView("commands")}
                 >
                   Команды
                 </ViewToggleBtn>
                 <ViewToggleBtn
                   type="button"
-                  className={view === "scenarios" ? "active" : ""}
+                  className={view === "scenarios" || isScenarioRoute ? "active" : ""}
                   onClick={() => setView("scenarios")}
                 >
                   Сценарии
@@ -983,7 +1092,7 @@ function App() {
 
           <Routes>
             <Route
-              path="/"
+              path="/app"
               element={
                 <NetworkContent
                   vendor={vendor}
@@ -994,7 +1103,11 @@ function App() {
               }
             />
             <Route
-              path="/laws"
+              path="/app/scenarios/:title"
+              element={<ScenarioDetail />}
+            />
+            <Route
+              path="/app/laws"
               element={<LawsContent lawId={lawId} pageIndex={lawPage} />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
