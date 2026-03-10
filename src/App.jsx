@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Routes, Route, useLocation, useNavigate, Navigate, useParams } from "react-router-dom";
 import styled, { createGlobalStyle } from "styled-components";
 import { commands, scenarios, laws } from "./data.js";
@@ -6,9 +6,9 @@ import heroImage from "../save.jpg";
 
 const GlobalStyle = createGlobalStyle`
   :root {
-    --bg: #ffffff;
-    --bg-elevated: #ffffff;
-    --bg-elevated-soft: #f1f3f4;
+    --bg: radial-gradient(circle at top left, #f3f7ff, #e7f0ff, #eaf4ff);
+    --bg-elevated: rgba(255, 255, 255, 0.98);
+    --bg-elevated-soft: #eef3fb;
     --text: #202124;
     --text-soft: #5f6368;
     --accent: #1a73e8;
@@ -25,9 +25,9 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body.theme-dark {
-    --bg: #202124;
-    --bg-elevated: #202124;
-    --bg-elevated-soft: #292a2d;
+    --bg: linear-gradient(90deg, #020617, #0f172a, #1e293b, #0f172a);
+    --bg-elevated: #020617;
+    --bg-elevated-soft: #0b1120;
     --text: #e8eaed;
     --text-soft: #bdc1c6;
     --accent: #8ab4f8;
@@ -77,9 +77,11 @@ const Header = styled.header`
   justify-content: space-between;
   align-items: center;
   padding: 12px 32px;
-  background: #0d2447;
+  background: linear-gradient(90deg, #020617, #0f172a, #1e293b, #0f172a);
   border-bottom: 1px solid var(--border-subtle);
   color: #e5e7eb;
+   transition: transform 200ms ease-out;
+   transform: translateY(${(props) => (props.hidden ? "-100%" : "0")});
 
   @media (max-width: 640px) {
     flex-direction: column;
@@ -101,6 +103,15 @@ const AppTitle = styled.div`
     font-size: 0.9rem;
     color: #cbd5f5;
   }
+
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 1.15rem;
+    }
+    p {
+      font-size: 0.8rem;
+    }
+  }
 `;
 
 const HeaderControls = styled.div`
@@ -119,6 +130,12 @@ const SectionToggle = styled.div`
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.9);
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.4);
+
+  @media (max-width: 640px) {
+    width: 100%;
+    justify-content: space-between;
+    padding: 2px 4px;
+  }
 `;
 
 const SectionToggleBtn = styled.button`
@@ -132,6 +149,13 @@ const SectionToggleBtn = styled.button`
   white-space: nowrap;
   transition: background var(--transition-fast), color var(--transition-fast),
     box-shadow var(--transition-fast), transform 80ms ease-out;
+
+  @media (max-width: 640px) {
+    flex: 1;
+    font-size: 0.72rem;
+    padding: 6px 4px;
+    min-width: 0;
+  }
 
   &.active {
     background: linear-gradient(135deg, #38bdf8, #22c55e);
@@ -359,7 +383,6 @@ const ContentHeader = styled.div`
   align-items: baseline;
   justify-content: space-between;
   padding: 2px 2px 10px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
 `;
 
 const ViewToggle = styled.div`
@@ -406,7 +429,7 @@ const Card = styled.article`
   background: color-mix(in srgb, var(--bg-elevated) 100%, rgba(255, 255, 255, 0.12));
   border-radius: var(--radius-md);
   padding: 10px 10px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.99);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
   display: flex;
   flex-direction: column;
@@ -574,6 +597,76 @@ const LawList = styled.ul`
   list-style-type: disc;
 `;
 
+const NetworkSplitRoot = styled.div`
+  min-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+`;
+
+const NetworkSplit = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+  }
+`;
+
+const NetworkPanel = styled.button`
+  flex: 1;
+  border: none;
+  border-radius: 16px;
+  padding: 24px 20px;
+  background: radial-gradient(circle at top left, #0f172a, #020617);
+  color: #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition:
+    transform 120ms ease-out,
+    box-shadow 180ms ease-out,
+    filter 160ms ease-out;
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 1.6rem;
+    letter-spacing: -0.04em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: rgba(226, 232, 240, 0.92);
+  }
+
+  @media (max-width: 900px) {
+    padding: 20px 16px;
+    align-items: flex-start;
+    text-align: left;
+
+    h3 {
+      font-size: 1.35rem;
+    }
+
+    p {
+      font-size: 0.96rem;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.9);
+    filter: brightness(1.03);
+  }
+`;
+
 const Footer = styled.footer`
   padding: 10px 24px 14px;
   font-size: 0.8rem;
@@ -641,20 +734,20 @@ const LandingTopBar = styled.div`
 
 const LandingTitle = styled.h1`
   margin: 0 0 16px;
-  font-size: clamp(2.2rem, 3vw + 1.4rem, 3.2rem);
+  font-size: 2.7rem;
   letter-spacing: -0.04em;
 `;
 
 const LandingSubtitle = styled.p`
   margin: 0 0 24px;
-  font-size: 1.2rem;
-  line-height: 1.7;
+  font-size: 1.26rem;
+  line-height: 1.9;
   color: rgba(226, 232, 240, 0.9);
 `;
 
 const LandingMeta = styled.p`
   margin: 0 0 28px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: rgba(191, 219, 254, 0.9);
@@ -696,9 +789,9 @@ function LandingPage({ onEnter, onOpenLaws, isDark, onToggleTheme }) {
         <LandingMeta>· Информационная безопасность ·</LandingMeta>
         <LandingTitle>Справочник по информационной безопасности</LandingTitle>
         <LandingSubtitle>
-        На моем ресурсе Вы найдете все полезные материалы по теме информационной безопасности. Я собрали для вас актуальную информацию по сетевым технологиям, нормативно-правовым актам и основным аспектам информационной безопасности.<br />
-        Я стремлюсь создать удобную платформу, где Вы сможете легко находить полезные советы, руководства и аналитические материалы. Я постоянно работаю над улучшением сайта и регулярно добавляю новую информацию.<br />
-        Все это бесплатно, поэтому читайте, познавайте и помогайте другим!<br />
+        На моем ресурсе Вы найдете все полезные материалы по теме информационной безопасности. Я собрали для вас актуальную информацию по сетевым технологиям, нормативно-правовым актам и основным аспектам информационной безопасности.<br/>
+        Я стремлюсь создать удобную платформу, где Вы сможете легко находить полезные советы, руководства и аналитические материалы.<br/>
+        Все это бесплатно, поэтому читайте, познавайте и помогайте другим!
         </LandingSubtitle>
         <LandingButton type="button" onClick={onEnter}>
           Перейти к справочнику
@@ -820,6 +913,56 @@ function NetworkContent({ vendor, view, search, activeCategories }) {
             <ScenarioDescription>{scenario.description}</ScenarioDescription>
           </Card>
         ))}
+      </CommandsGrid>
+    </>
+  );
+}
+
+function NetworkHub() {
+  const navigate = useNavigate();
+
+  return (
+    <NetworkSplitRoot>
+      <ContentHeader>
+        <h2>Сетевые технологии</h2>
+      </ContentHeader>
+      <NetworkSplit>
+        <NetworkPanel type="button" onClick={() => navigate("/app/theory")}>
+          <h3>Теория</h3>
+          <p>
+            В этом разделе вы найдете основные теоретические концепции сетевых технологий,
+            включая принципы работы, архитектуру сети и типы сетей. Понимание этих основ
+            поможет вам лучше ориентироваться в настройках и управлении сетевым
+            оборудованием.
+          </p>
+        </NetworkPanel>
+        <NetworkPanel type="button" onClick={() => navigate("/app/cheatsheet")}>
+          <h3>Справочник команд</h3>
+          <p>
+            Этот раздел предлагает быстрое и удобное руководство по основным командам,
+            необходимым для настройки и управления сетевым оборудованием. Здесь вы найдете
+            краткие описания и примеры использования каждой команды.
+          </p>
+        </NetworkPanel>
+      </NetworkSplit>
+    </NetworkSplitRoot>
+  );
+}
+
+function TheoryPage() {
+  return (
+    <>
+      <ContentHeader>
+        <h2>Теория сетевых технологий</h2>
+      </ContentHeader>
+      <CommandsGrid>
+        <Card>
+          <ScenarioTitle>Контент находится в разработке</ScenarioTitle>
+          <ScenarioDescription>
+            Раздел с теоретическими материалами по сетевым технологиям скоро появится. Здесь
+            будут базовые и продвинутые темы, примеры и разборы типовых ситуаций.
+          </ScenarioDescription>
+        </Card>
       </CommandsGrid>
     </>
   );
@@ -1070,6 +1213,8 @@ function App() {
   const [view, setView] = useState("commands"); // commands | scenarios
   const [search, setSearch] = useState("");
   const [activeCategories, setActiveCategories] = useState(new Set());
+  const [hideHeader, setHideHeader] = useState(false);
+  const lastScrollY = useRef(0);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -1077,6 +1222,8 @@ function App() {
   const isLandingRoute = location.pathname === "/";
   const isLawsRoute = location.pathname.startsWith("/app/laws");
   const isScenarioRoute = location.pathname.startsWith("/app/scenarios");
+  const isNetworkHubRoute = location.pathname === "/app";
+  const isTheoryRoute = location.pathname.startsWith("/app/theory");
   const categories = useCategories(vendor);
 
   const handleToggleCategory = (cat) => {
@@ -1101,6 +1248,24 @@ function App() {
     setActiveCategories(new Set());
   }, [location.pathname]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const current = window.scrollY || 0;
+      const prev = lastScrollY.current;
+
+      if (current > prev && current > 80) {
+        setHideHeader(true);
+      } else {
+        setHideHeader(false);
+      }
+
+      lastScrollY.current = current;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   if (isLandingRoute) {
     return (
       <>
@@ -1118,7 +1283,7 @@ function App() {
   return (
     <AppShell>
       <GlobalStyle />
-      <Header className={isLawsRoute ? "laws-header" : ""}>
+      <Header className={isLawsRoute ? "laws-header" : ""} hidden={hideHeader}>
         <AppTitle>
           <h1>Универсальный справочник по ИБ</h1>
           <p>Пользуйтесь | Размышляйте | Учитесь | Делитесь</p>
@@ -1152,47 +1317,49 @@ function App() {
 
       <Main hasSidebar={false}>
         <Content>
-          <div
-            style={{
-              marginBottom: 16,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 12,
-            }}
-          >
-            <div style={{ display: "flex", gap: 6 }}>
-              <IconButton type="button" aria-label="Назад" onClick={() => navigate(-1)}>
-                ←
-              </IconButton>
-              <IconButton type="button" aria-label="Вперёд" onClick={() => navigate(1)}>
-                →
-              </IconButton>
-            </div>
+          {!(isNetworkHubRoute || isTheoryRoute) && (
             <div
               style={{
-                flex: 1,
-                maxWidth: 480,
-                marginLeft: "auto",
-                marginRight: "auto",
+                marginBottom: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 12,
               }}
             >
-              <SearchInput
-                type="search"
-                placeholder={
-                  isLawsRoute
-                    ? "Поиск по нормативным актам..."
-                    : view === "scenarios"
-                    ? "Поиск по сценариям на сайте..."
-                    : "Поиск по командам на сайте..."
-                }
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <div style={{ display: "flex", gap: 6 }}>
+                <IconButton type="button" aria-label="Назад" onClick={() => navigate(-1)}>
+                  ←
+                </IconButton>
+                <IconButton type="button" aria-label="Вперёд" onClick={() => navigate(1)}>
+                  →
+                </IconButton>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  maxWidth: 480,
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                }}
+              >
+                <SearchInput
+                  type="search"
+                  placeholder={
+                    isLawsRoute
+                      ? "Поиск по нормативным актам..."
+                      : view === "scenarios"
+                      ? "Поиск по сценариям на сайте..."
+                      : "Поиск по командам на сайте..."
+                  }
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
-          {!isLawsRoute && !isScenarioRoute && (
+          {!isLawsRoute && !isScenarioRoute && !isNetworkHubRoute && !isTheoryRoute && (
             <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end" }}>
               <ViewToggle aria-label="Режим отображения">
                 <ViewToggleBtn
@@ -1216,6 +1383,10 @@ function App() {
           <Routes>
             <Route
               path="/app"
+              element={<NetworkHub />}
+            />
+            <Route
+              path="/app/cheatsheet"
               element={
                 <NetworkContent
                   vendor={vendor}
@@ -1225,6 +1396,7 @@ function App() {
                 />
               }
             />
+            <Route path="/app/theory" element={<TheoryPage />} />
             <Route
               path="/app/scenarios/:title"
               element={<ScenarioDetail />}
@@ -1243,8 +1415,7 @@ function App() {
       </Main>
 
       <Footer>
-        Локальный оффлайн‑справочник. Можно использовать на лабах и экзаменах.
-      </Footer>
+      Сайт находится в постоянной доработке, информация обновляется, а контент пополняется.      </Footer>
     </AppShell>
   );
 }
