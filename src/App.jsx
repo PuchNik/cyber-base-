@@ -36,6 +36,13 @@ const GlobalStyle = createGlobalStyle`
     --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
   }
 
+  body.theme-dark .cmd-text {
+    color: #e0f2fe;
+    text-shadow:
+      0 0 4px rgba(56, 189, 248, 0.7),
+      0 0 12px rgba(59, 130, 246, 0.6);
+  }
+
   *,
   *::before,
   *::after {
@@ -443,6 +450,22 @@ const CommandCode = styled.pre`
   border: 1px solid rgba(148, 163, 184, 0.6);
   white-space: pre-wrap;
   word-break: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+
+  .cmd-text {
+    flex: 1;
+    color: var(--text);
+  }
+
+  .cmd-copy-icon {
+    flex: 0 0 auto;
+    font-size: 0.85rem;
+    color: rgba(148, 163, 184, 0.9);
+  }
 `;
 
 const CommandDescription = styled.div`
@@ -451,12 +474,12 @@ const CommandDescription = styled.div`
 `;
 
 const ScenarioTitle = styled.div`
-  font-size: 1rem;
+  font-size: 1.12rem;
   font-weight: 600;
 `;
 
 const ScenarioDescription = styled.div`
-  font-size: 0.95rem;
+  font-size: 1.3rem;
   color: var(--text-soft);
 `;
 
@@ -467,21 +490,55 @@ const ScenarioSteps = styled.ol`
 
 const ScenarioStep = styled.li`
   margin-bottom: 10px;
-  font-size: 0.98rem;
+  font-size: 1.3rem;
 `;
 
 const ScenarioStepCode = styled.span`
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  font-size: 0.9rem;
+  font-size: 1rem;
   background: color-mix(in srgb, var(--bg-elevated-soft) 94%, rgba(15, 23, 42, 0.08));
   border-radius: 6px;
   padding: 4px 8px;
   border: 1px solid rgba(148, 163, 184, 0.6);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .cmd-text {
+    color: var(--text);
+  }
+
+  .cmd-copy-icon {
+    font-size: 0.8rem;
+    color: rgba(148, 163, 184, 0.9);
+  }
 `;
 
+function copyToClipboard(text) {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    return;
+  }
+  try {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+  } catch {
+    // игнорируем сбой копирования
+  }
+}
+
 const LawText = styled.div`
-  font-size: 1rem;
+  font-size: 1.3rem;
   line-height: 1.7;
   max-width: 720px;
   margin: 4px auto 0;
@@ -489,6 +546,7 @@ const LawText = styled.div`
 
 const LawParagraph = styled.p`
   margin: 0 0 6px;
+  font-size: 1.3rem;
 `;
 
 const LawPartLabel = styled(LawParagraph)`
@@ -501,7 +559,7 @@ const LawPartLabel = styled(LawParagraph)`
 const LawLawTitle = styled(LawParagraph)`
   text-align: center;
   font-weight: 600;
-  font-size: 1.02rem;
+  font-size: 1.22rem;
   margin-bottom: 12px;
 `;
 
@@ -716,7 +774,13 @@ function NetworkContent({ vendor, view, search, activeCategories }) {
                   {item.diag && <Badge className="badge-info">diag</Badge>}
                 </CommandBadges>
               </CommandHeader>
-              <CommandCode>{item.cmd}</CommandCode>
+              <CommandCode
+                title="Нажмите, чтобы скопировать команду"
+                onClick={() => copyToClipboard(item.cmd)}
+              >
+                <span className="cmd-text">{item.cmd}</span>
+                <span className="cmd-copy-icon">📋</span>
+              </CommandCode>
               <CommandDescription>{item.description}</CommandDescription>
             </Card>
           ))}
@@ -807,17 +871,76 @@ function renderLawPageContent(content) {
   return elements;
 }
 
-function LawsContent({ lawId, pageIndex }) {
-  const law =
-    laws.find((x) => x.id === lawId) || (laws.length > 0 ? laws[0] : null);
+function LawsLibrary({ search }) {
+  const navigate = useNavigate();
+  const term = search.trim().toLowerCase();
+
+  const filtered = laws.filter((law) => {
+    if (!term) return true;
+    const haystack = (
+      law.title +
+      " " +
+      law.shortTitle +
+      " " +
+      law.description
+    ).toLowerCase();
+    return haystack.includes(term);
+  });
+
+  return (
+    <>
+      <ContentHeader>
+        <h2>Нормативно‑правовые акты</h2>
+        <ResultsCount>{`${filtered.length} документов`}</ResultsCount>
+      </ContentHeader>
+      <CommandsGrid>
+        {filtered.map((law) => (
+          <Card
+            key={law.id}
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/app/laws/${law.id}`)}
+          >
+            <ScenarioTitle>{law.shortTitle}</ScenarioTitle>
+            <ScenarioDescription>{law.description}</ScenarioDescription>
+          </Card>
+        ))}
+      </CommandsGrid>
+    </>
+  );
+}
+
+function LawDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const law = laws.find((x) => x.id === id) || null;
+
+  React.useEffect(() => {
+    setPageIndex(0);
+  }, [id]);
+
+  React.useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [pageIndex]);
 
   if (!law) {
     return (
       <>
         <ContentHeader>
-          <h2>Нормативно‑правовые акты</h2>
-          <ResultsCount>0 документов</ResultsCount>
+          <h2>Документ не найден</h2>
         </ContentHeader>
+        <CommandsGrid>
+          <Card>
+            <ScenarioDescription>
+              Возможно, нормативный акт был переименован или удалён. Вернитесь к
+              списку документов.
+            </ScenarioDescription>
+          </Card>
+        </CommandsGrid>
       </>
     );
   }
@@ -826,6 +949,9 @@ function LawsContent({ lawId, pageIndex }) {
   const index = Math.min(Math.max(pageIndex, 0), total - 1);
   const page = law.parts[index];
 
+  const canPrev = index > 0;
+  const canNext = index < total - 1;
+
   return (
     <>
       <ContentHeader>
@@ -833,23 +959,48 @@ function LawsContent({ lawId, pageIndex }) {
         <ResultsCount>{`${index + 1} / ${total} частей`}</ResultsCount>
       </ContentHeader>
       <CommandsGrid>
-        <Card>
+        <Card style={{ textAlign: "center" }}>
           <ScenarioTitle>{law.shortTitle}</ScenarioTitle>
           <ScenarioDescription>{law.title}</ScenarioDescription>
-          <ScenarioDescription
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 8,
-              marginTop: 8,
-            }}
-          >
-            <span>{`${page.title} (${index + 1} / ${total})`}</span>
+          <ScenarioDescription style={{ marginTop: 8 }}>
+            {`${page.title} (${index + 1} / ${total})`}
           </ScenarioDescription>
         </Card>
         <Card>
           <LawText>{renderLawPageContent(page.content)}</LawText>
+        </Card>
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <FilterChip
+              type="button"
+              disabled={!canPrev}
+              onClick={() =>
+                setPageIndex((prev) => (prev > 0 ? prev - 1 : prev))
+              }
+              style={!canPrev ? { opacity: 0.5, cursor: "default" } : {}}
+            >
+              ← Предыдущая часть
+            </FilterChip>
+            <FilterChip
+              type="button"
+              disabled={!canNext}
+              onClick={() =>
+                setPageIndex((prev) =>
+                  prev < total - 1 ? prev + 1 : prev
+                )
+              }
+              style={!canNext ? { opacity: 0.5, cursor: "default" } : {}}
+            >
+              Следующая часть →
+            </FilterChip>
+          </div>
         </Card>
       </CommandsGrid>
     </>
@@ -896,7 +1047,13 @@ function ScenarioDetail() {
           <ScenarioSteps>
             {scenario.steps.map((step) => (
               <ScenarioStep key={step.cmd + (step.note || "")}>
-                <ScenarioStepCode>{step.cmd}</ScenarioStepCode>
+                <ScenarioStepCode
+                  title="Нажмите, чтобы скопировать команду"
+                  onClick={() => copyToClipboard(step.cmd)}
+                >
+                  <span className="cmd-text">{step.cmd}</span>
+                  <span className="cmd-copy-icon">📋</span>
+                </ScenarioStepCode>
                 {step.note && <span>{` — ${step.note}`}</span>}
               </ScenarioStep>
             ))}
@@ -913,8 +1070,6 @@ function App() {
   const [view, setView] = useState("commands"); // commands | scenarios
   const [search, setSearch] = useState("");
   const [activeCategories, setActiveCategories] = useState(new Set());
-  const [lawId, setLawId] = useState(laws[0]?.id ?? null);
-  const [lawPage, setLawPage] = useState(0);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -938,11 +1093,6 @@ function App() {
 
   const resetFilters = () => {
     setActiveCategories(new Set());
-  };
-
-  const handleSelectLaw = (id) => {
-    setLawId(id);
-    setLawPage(0);
   };
 
   useEffect(() => {
@@ -970,8 +1120,8 @@ function App() {
       <GlobalStyle />
       <Header className={isLawsRoute ? "laws-header" : ""}>
         <AppTitle>
-          <h1>Справочник команд Cisco и MikroTik</h1>
-          <p>Cheat‑sheet для быстрого поиска сетевых команд</p>
+          <h1>Универсальный справочник по ИБ</h1>
+          <p>Пользуйтесь | Размышляйте | Учитесь | Делитесь</p>
         </AppTitle>
         <HeaderControls>
           <SectionToggle aria-label="Глобальные разделы">
@@ -1000,74 +1150,47 @@ function App() {
         </HeaderControls>
       </Header>
 
-      <Main hasSidebar={isLawsRoute}>
-        {isLawsRoute && (
-          <Sidebar>
-            <section>
-              <SidebarLabel>Поиск по законам</SidebarLabel>
+      <Main hasSidebar={false}>
+        <Content>
+          <div
+            style={{
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 12,
+            }}
+          >
+            <div style={{ display: "flex", gap: 6 }}>
+              <IconButton type="button" aria-label="Назад" onClick={() => navigate(-1)}>
+                ←
+              </IconButton>
+              <IconButton type="button" aria-label="Вперёд" onClick={() => navigate(1)}>
+                →
+              </IconButton>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                maxWidth: 480,
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            >
               <SearchInput
                 type="search"
-                placeholder="Поиск по названию и описанию закона..."
+                placeholder={
+                  isLawsRoute
+                    ? "Поиск по нормативным актам..."
+                    : view === "scenarios"
+                    ? "Поиск по сценариям на сайте..."
+                    : "Поиск по командам на сайте..."
+                }
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-            </section>
-
-            <FiltersSection>
-              <FiltersHeader>
-                <SidebarLabel>Документы</SidebarLabel>
-              </FiltersHeader>
-              <FiltersList>
-                {laws.map((law) => {
-                  const haystack = (
-                    law.title +
-                    " " +
-                    law.shortTitle +
-                    " " +
-                    law.description
-                  ).toLowerCase();
-                  if (search.trim() && !haystack.includes(search.trim().toLowerCase())) {
-                    return null;
-                  }
-                  return (
-                    <FilterChip
-                      key={law.id}
-                      type="button"
-                      className={lawId === law.id ? "active" : ""}
-                      onClick={() => handleSelectLaw(law.id)}
-                    >
-                      {law.shortTitle}
-                    </FilterChip>
-                  );
-                })}
-              </FiltersList>
-            </FiltersSection>
-          </Sidebar>
-        )}
-
-        <Content>
-          {!isLawsRoute && (
-            <div
-              style={{
-                marginBottom: 16,
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <div style={{ maxWidth: 480, width: "100%" }}>
-                <SearchInput
-                  type="search"
-                  placeholder={
-                    view === "scenarios"
-                      ? "Поиск по сценариям на сайте..."
-                      : "Поиск по командам на сайте..."
-                  }
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
             </div>
-          )}
+          </div>
 
           {!isLawsRoute && !isScenarioRoute && (
             <div style={{ marginBottom: 8, display: "flex", justifyContent: "flex-end" }}>
@@ -1108,7 +1231,11 @@ function App() {
             />
             <Route
               path="/app/laws"
-              element={<LawsContent lawId={lawId} pageIndex={lawPage} />}
+              element={<LawsLibrary search={search} />}
+            />
+            <Route
+              path="/app/laws/:id"
+              element={<LawDetail />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
