@@ -1,0 +1,25 @@
+{
+  "name": "network_technologies",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Справочник команд Cisco / MikroTik и НПА, переписанный на React + Vite",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "echo \"No linter configured\""
+  },
+  "keywords": [],
+  "author": "PuchNik",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.0.1",
+    "styled-components": "^6.1.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-swc": "^4.2.3",
+    "vite": "^7.3.1"
+  }
+}
